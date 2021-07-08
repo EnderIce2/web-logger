@@ -9,31 +9,19 @@ $owner_ip = "192.168.0.1";
 
 function GetIPAddress()
 {
-    if (isset($_SERVER)) {
-        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $result = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        } else {
-            if (isset($_SERVER['HTTP_CLIENT_IP'])) {
-                $result = $_SERVER['HTTP_CLIENT_IP'];
-            } else {
-                $result = $_SERVER['REMOTE_ADDR'];
-            }
-        }
+    if (null !== filter_input(INPUT_SERVER, 'HTTP_X_FORWARDED_FOR', FILTER_SANITIZE_STRING)) {
+        $result = filter_input(INPUT_SERVER, 'HTTP_X_FORWARDED_FOR', FILTER_SANITIZE_STRING);
     } else {
-        if (getenv("HTTP_X_FORWARDED_FOR")) {
-            $result = getenv("HTTP_X_FORWARDED_FOR");
+        if (null !== filter_input(INPUT_SERVER, 'HTTP_CLIENT_IP', FILTER_SANITIZE_STRING)) {
+            $result = filter_input(INPUT_SERVER, 'HTTP_CLIENT_IP', FILTER_SANITIZE_STRING);
         } else {
-            if (getenv("HTTP_CLIENT_IP")) {
-                $result = getenv("HTTP_CLIENT_IP");
-            } else {
-                $result = getenv("REMOTE_ADDR");
-            }
+            $result = filter_input(INPUT_SERVER, 'REMOTE_ADDR', FILTER_SANITIZE_STRING);
         }
     }
     return $result;
 }
 
-$user_agent     =   $_SERVER['HTTP_USER_AGENT'];
+$user_agent     =   filter_input(INPUT_SERVER, 'HTTP_USER_AGENT', FILTER_SANITIZE_STRING);
 
 function GetWebBrowser()
 {
@@ -107,7 +95,7 @@ $user_os        = GetOperatingSystem();
 $ip             = GetIPAddress();
 $user_browser   = GetWebBrowser();
 
-$site_referer = $_SERVER['HTTP_REFERER'];
+$site_referer = filter_input(INPUT_SERVER, 'HTTP_REFERER', FILTER_SANITIZE_STRING);
 if ($site_referer == "") {
     $site = "direct";
 } else {
@@ -123,7 +111,7 @@ if ($ip == $owner_ip) {
     $country = $details->country;
     $city = $details->city;
 }
-$url = "$_SERVER[REQUEST_URI]";
+$url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING);
 
 $current = file_get_contents($file);
 $current .= "\n\n====" . date("Y-m-d - H:i:s") . "====";
@@ -154,12 +142,12 @@ header("HTTP/1.0 403 Forbidden"); // Error code
 <html>
 
 <head>
-	<title>403 Forbidden</title>
+    <title>403 Forbidden</title>
 </head>
 
 <body>
-	<h1>Forbidden</h1>
-	<p>You don't have permission to access this resource.</p>
+    <h1>Forbidden</h1>
+    <p>You don't have permission to access this resource.</p>
 </body>
 
 </html>
