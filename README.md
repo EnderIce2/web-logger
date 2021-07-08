@@ -1,5 +1,4 @@
 # web-logger
-Log IPs and URL requests for your VPS/home server
 
 Place all files from `html` folder into `/var/www/html`.
 
