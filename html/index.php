@@ -5,7 +5,7 @@
 // Configuration
 $file = 'ip.txt';
 $requests_file = 'url.txt';
-$owner_ip = "192.168.0.1";
+$owner_ip = "127.0.0.1";
 
 function GetIPAddress()
 {
