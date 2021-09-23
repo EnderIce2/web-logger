@@ -2,10 +2,18 @@
 <?php
 // PHP Code
 
-// Configuration
-$file = 'ip.txt';
-$requests_file = 'url.txt';
-$owner_ip = "127.0.0.1";
+// Configuration (leave empty if you want to disable a feature)
+
+// local file for ip grabber file
+$file = "";
+// requests file
+$requests_file = "";
+// your local ip (it will be shown as Owner and location Home)
+$owner_ip = "";
+// webhook if you prefer discord webhooks instead
+$discord_webhook = "";
+// if you want to use discord webhook for logging file/folder requests
+$discord_request_file_webhook = "";
 
 function GetIPAddress()
 {
@@ -113,20 +121,22 @@ if ($ip == $owner_ip) {
 }
 $url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING);
 
-$current = file_get_contents($file);
-$current .= "\n\n====" . date("Y-m-d - H:i:s") . "====";
-$current .= "\nIP: " . $ip;
-$current .= "\nCountry: " . $country;
-$current .= "\nCity: " . $city;
-$current .= "\nOS: " . $user_os;
-$current .= "\nBrowser: " . $user_browser;
-$current .= "\nWeb Referer: " . $site;
-$current .= "\nURL request: " . $url;
-$current .= "\nUser Agent: " . $user_agent;
-$current .= "\n=============================";
-file_put_contents($file, $current);
+if ($file != "") {
+    $current = file_get_contents($file);
+    $current .= "\n\n====" . date("Y-m-d - H:i:s") . "====";
+    $current .= "\nIP: " . $ip;
+    $current .= "\nCountry: " . $country;
+    $current .= "\nCity: " . $city;
+    $current .= "\nOS: " . $user_os;
+    $current .= "\nBrowser: " . $user_browser;
+    $current .= "\nWeb Referer: " . $site;
+    $current .= "\nURL request: " . $url;
+    $current .= "\nUser Agent: " . $user_agent;
+    $current .= "\n=============================";
+    file_put_contents($file, $current);
+}
 
-if ($url != "/") {
+if ($url != "/" && $requests_file != "") {
     $current_url_req = file_get_contents($requests_file);
     $current_url_req .= $url . "\n";
     file_put_contents($requests_file, $current_url_req);
@@ -136,6 +146,115 @@ if ($url != "/") {
     $lines = array_unique($lines);
     file_put_contents($requests_file, implode($lines));
 }
+
+$timestamp = date("c", strtotime("now"));
+
+if ($discord_webhook != "") {
+    // You can uncomment if you need to customize the embed
+    $discord_embed_json = json_encode([
+        // "content" => "",
+        "username" => "IP Logger",
+        "tts" => false,
+        "embeds" => [
+            [
+                "title" => "IP Log",
+                "type" => "rich",
+                "description" => "Received log from " . $ip,
+                "url" => "https://github.com/EnderIce2/web-logger",
+                "timestamp" => $timestamp,
+                "color" => hexdec("330075"),
+                // "footer" => [
+                //     "text" => ""
+                //     "icon_url" => ""
+                // ],
+                // "thumbnail" => [
+                //    "url" => ""
+                // ],
+
+                "fields" => [
+                    [
+                        "name" => "IP",
+                        "value" => $ip,
+                        "inline" => false
+                    ],
+                    [
+                        "name" => "Country",
+                        "value" => $country,
+                        "inline" => false
+                    ],
+                    [
+                        "name" => "City",
+                        "value" => $city,
+                        "inline" => false
+                    ],
+                    [
+                        "name" => "Operating System",
+                        "value" => $user_os,
+                        "inline" => false
+                    ],
+                    [
+                        "name" => "Web Browser",
+                        "value" => $user_browser,
+                        "inline" => false
+                    ],
+                    [
+                        "name" => "Web Refer",
+                        "value" => $site,
+                        "inline" => false
+                    ],
+                    [
+                        "name" => "URL Request",
+                        "value" => $url,
+                        "inline" => false
+                    ],
+                    [
+                        "name" => "User Agent",
+                        "value" => $user_agent,
+                        "inline" => false
+                    ]
+                ]
+            ]
+        ]
+
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    // chrome will send two requests; one for favicon and another one for the webpage
+    if ($url != "/favicon.ico") {
+        $curl_webhook = curl_init($discord_webhook);
+        curl_setopt($curl_webhook, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+        curl_setopt($curl_webhook, CURLOPT_POST, 1);
+        curl_setopt($curl_webhook, CURLOPT_POSTFIELDS, $discord_embed_json);
+        curl_setopt($curl_webhook, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($curl_webhook, CURLOPT_HEADER, 0);
+        curl_setopt($curl_webhook, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($curl_webhook);
+        // echo $response; // debugging
+        curl_close($curl_webhook);
+    }
+}
+
+if ($discord_request_file_webhook != "") {
+    $request_discord_embed_json = json_encode([
+        "content" => $url,
+        "username" => "IP URL Request Logger",
+        "tts" => false,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    // chrome will send two requests; one for favicon and another one for the webpage
+    if ($url != "/favicon.ico") {
+        $request_curl_webhook = curl_init($discord_request_file_webhook);
+        curl_setopt($request_curl_webhook, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+        curl_setopt($request_curl_webhook, CURLOPT_POST, 1);
+        curl_setopt($request_curl_webhook, CURLOPT_POSTFIELDS, $request_discord_embed_json);
+        curl_setopt($request_curl_webhook, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($request_curl_webhook, CURLOPT_HEADER, 0);
+        curl_setopt($request_curl_webhook, CURLOPT_RETURNTRANSFER, 1);
+        $request_response = curl_exec($request_curl_webhook);
+        // echo $request_response; // debugging
+        curl_close($request_curl_webhook);
+    }
+}
+
 header("HTTP/1.0 403 Forbidden"); // Error code
 // HTML Code
 ?>

@@ -9,3 +9,7 @@ Don't forget to modify the configuration inside `index.php` file!
 ### 📽Demo video
 
 [![](http://img.youtube.com/vi/XwxMQWyX2zs/0.jpg)](http://www.youtube.com/watch?v=XwxMQWyX2zs "")
+
+### 📽Discord Embed Demo
+
+[![](http://img.youtube.com/vi/4t1vZDPDUbE/0.jpg)](http://www.youtube.com/watch?v=4t1vZDPDUbE "")
